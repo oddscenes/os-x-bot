@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  os-x-bot:
+    container_name: os-x-bot-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge 
