@@ -107,9 +107,5 @@ dist
 # Ignore everything in this directory except .gitignore
 deployment/
 
-# Local database files
-*.db
-*.db-journal
-
 # Compiled output
 dist 

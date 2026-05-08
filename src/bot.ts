@@ -8,12 +8,6 @@ import { generateContent } from './services/openaiClient';
 import { postTweet, replyToTweet, retweet, quoteTweet } from './services/xClient'; 
 import { config } from './config';
 
-// Function to log interactions (no database - just console logging)
-async function logInteraction(type: string, targetId?: string, authorId?: string): Promise<void> {
-  logger.info(`[NO-DB] Interaction logged: type=${type}, targetId=${targetId}, authorId=${authorId}`);
-  // No database logging - just console output for tracking
-}
-
 /**
  * Main function to run the bot's logic cycle.
  * @param bypassCadence - If true, ignores cadence windows for immediate posting
@@ -32,7 +26,8 @@ export async function runBotCycle(bypassCadence: boolean = false) {
           break;
         }
         // 1. Generate reply content using OpenAI
-        const replyPrompt = `Reply to @${decision.targetTweet.authorId}:\n\n"${decision.targetTweet.text}"\n\nAdd value. Be brief and helpful.`;
+        const replyTarget = decision.targetTweet.authorUsername || decision.targetTweet.authorId;
+        const replyPrompt = `Reply to @${replyTarget}:\n\n"${decision.targetTweet.text}"\n\nAdd value. Be brief and helpful.`;
         const replyContent = await generateContent(replyPrompt);
 
         if (!replyContent) {
@@ -42,13 +37,9 @@ export async function runBotCycle(bypassCadence: boolean = false) {
 
         // 2. Post the reply via xClient
         const replyResultId = await replyToTweet(replyContent, decision.targetTweet.id);
-        
-        // 3. Log reply interaction
-        if (replyResultId) {
-             // Log with the ID of the *reply* tweet itself
-            await logInteraction('reply', replyResultId, decision.targetTweet.authorId);
-        } else {
-             logger.warn('Reply was not successful, skipping interaction log.');
+
+        if (!replyResultId) {
+             logger.warn('Reply was not successful.');
         }
         break;
 
@@ -59,13 +50,9 @@ export async function runBotCycle(bypassCadence: boolean = false) {
         }
         // 1. Retweet using xClient
         const retweetSuccess = await retweet(decision.targetTweet.id);
-        
-        // 2. Log repost interaction
-        if (retweetSuccess) {
-             // Log with the ID of the *original* tweet that was retweeted
-            await logInteraction('repost', decision.targetTweet.id);
-        } else {
-            logger.warn('Retweet was not successful, skipping interaction log.');
+
+        if (!retweetSuccess) {
+            logger.warn('Retweet was not successful.');
         }
         break;
 
@@ -76,7 +63,8 @@ export async function runBotCycle(bypassCadence: boolean = false) {
         }
         
         // 1. Generate quote tweet commentary using OpenAI
-        const quoteTweetPrompt = `Quick comment on this tweet by @${decision.targetTweet.authorId}:\n\n"${decision.targetTweet.text}"\n\nAdd your take. Be brief and insightful.`;
+        const quoteTarget = decision.targetTweet.authorUsername || decision.targetTweet.authorId;
+        const quoteTweetPrompt = `Quick comment on this tweet by @${quoteTarget}:\n\n"${decision.targetTweet.text}"\n\nAdd your take. Be brief and insightful.`;
         const quoteContent = await generateContent(quoteTweetPrompt);
 
         if (!quoteContent) {
@@ -86,20 +74,17 @@ export async function runBotCycle(bypassCadence: boolean = false) {
 
         // 2. Post the quote tweet via xClient
         const quoteResultId = await quoteTweet(quoteContent, decision.targetTweet.id);
-        
-        // 3. Log quote_tweet interaction
-        if (quoteResultId) {
-            await logInteraction('quote_tweet', quoteResultId, decision.targetTweet.authorId);
-        } else {
-            logger.warn('Quote tweet was not successful, skipping interaction log.');
+
+        if (!quoteResultId) {
+            logger.warn('Quote tweet was not successful.');
         }
         break;
 
       case 'original_post':
         // 1. Generate original post content using the template prompts in config.
-        const randomPrompt = config.originalPostPrompts[
-          Math.floor(Math.random() * config.originalPostPrompts.length)
-        ];
+        const randomPrompt = config.originalPostPrompts.length > 0
+          ? config.originalPostPrompts[Math.floor(Math.random() * config.originalPostPrompts.length)]
+          : 'Write a concise, useful post for this account.';
         logger.debug({ selectedPrompt: randomPrompt }, 'Selected prompt for original post');
         const postContent = await generateContent(randomPrompt);
 
@@ -110,12 +95,9 @@ export async function runBotCycle(bypassCadence: boolean = false) {
 
         // 2. Post the tweet via xClient
         const postResultId = await postTweet(postContent);
-        
-        // 3. Log original_post interaction
-        if (postResultId) {
-            await logInteraction('original_post', postResultId);
-        } else {
-             logger.warn('Original post was not successful, skipping interaction log.');
+
+        if (!postResultId) {
+             logger.warn('Original post was not successful.');
         }
         break;
 

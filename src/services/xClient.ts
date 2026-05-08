@@ -13,6 +13,7 @@ interface TweetCandidate {
   id: string;
   text: string;
   authorId: string;
+  authorUsername?: string;
   authorFollowers: number;
   likeCount: number;
   retweetCount: number;
@@ -319,6 +320,7 @@ export async function searchRecentTweets(count: number = 10): Promise<TweetCandi
         id: tweet.id,
         text: tweet.text,
         authorId: tweet.author.id,
+        authorUsername: tweet.author.userName,
         authorFollowers: tweet.author.followers,
         likeCount: tweet.likeCount,
         retweetCount: tweet.retweetCount,

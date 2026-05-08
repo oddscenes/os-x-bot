@@ -11,14 +11,13 @@ const { OPENAI_API_KEY, OPENAI_MODEL } = process.env;
 if (!OPENAI_API_KEY) {
   const errorMsg = 'Missing OPENAI_API_KEY in environment variables.';
   logger.error(errorMsg);
-  // Only exit if not in test environment
   if (process.env.NODE_ENV !== 'test') {
     process.exit(1);
   }
 }
 
 const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY || (process.env.NODE_ENV === 'test' ? 'test_openai_key' : ''), 
+  apiKey: OPENAI_API_KEY || (process.env.NODE_ENV === 'test' ? 'test_openai_key' : ''),
 });
 
 // Simple model router - allows easily switching models via env var.
@@ -27,6 +26,22 @@ const defaultModel = 'gpt-5.5';
 const selectedModel = OPENAI_MODEL || defaultModel;
 
 logger.info(`OpenAI client initialized. Using model: ${selectedModel}`);
+
+function buildSystemPrompt(): string {
+  const personality = config.personality;
+  const context = [
+    `Bio: ${personality.bio}`,
+    `Background: ${personality.background}`,
+    `Perspective: ${personality.experience}`,
+    `Knowledge: ${personality.knowledge.join(', ')}`,
+  ].join('\n');
+
+  const examples = config.postExamples.length > 0
+    ? `\n\nStyle examples:\n${config.postExamples.map(example => `- ${example}`).join('\n')}`
+    : '';
+
+  return `${config.systemPrompt}\n\nAccount context:\n${context}${examples}`;
+}
 
 // --- Basic Harmful Content Check (Post-Generation) ---
 // This is a very rudimentary check. Consider more sophisticated methods if needed.
@@ -61,7 +76,7 @@ export async function generateContent(userPrompt: string): Promise<string | null
     const completion = await openai.chat.completions.create({
       model: selectedModel,
       messages: [
-        { role: "system", content: config.systemPrompt },
+        { role: "system", content: buildSystemPrompt() },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.7,

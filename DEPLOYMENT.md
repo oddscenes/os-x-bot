@@ -19,17 +19,17 @@ npm install
 cp .env.example .env
 npm run build
 npm run pm2
-pm2 save
-pm2 startup
+npx pm2 save
+npx pm2 startup
 ```
 
 Useful commands:
 
 ```bash
-pm2 status
-pm2 logs os-x-bot
-pm2 restart os-x-bot
-pm2 stop os-x-bot
+npx pm2 status
+npm run pm2:logs
+npm run pm2:restart
+npm run pm2:stop
 ```
 
 ## Docker Compose
@@ -90,6 +90,5 @@ docker compose logs -f
 
 ## Notes
 
-- This repo does not include a database by default. Interaction checks currently log to stdout and allow actions.
 - TwitterAPI.io is used for search. Live posting uses the official X API credentials.
 - OpenAI is the only implemented AI provider. Add other providers under `src/services/` if you need them.

@@ -43,7 +43,7 @@ This starts `src/scheduler.ts` with auto-reload.
 ```bash
 npm run build
 npm run pm2
-pm2 save
+npx pm2 save
 ```
 
 PM2 keeps the scheduler process alive. The scheduler handles the cron timing internally.

@@ -127,7 +127,3 @@ Before running live:
 - Confirm the X app has write permissions.
 - Confirm `CRON_SCHEDULE` matches the server timezone.
 - Keep `.env` out of git. `.env.example` is the only env file that should be committed.
-
-## Status
-
-This is a practical starter template, not a full social media platform. The current implementation intentionally avoids adding extra providers, dashboards, databases, or analytics until they are needed.
